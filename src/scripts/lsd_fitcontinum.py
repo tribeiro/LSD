@@ -39,7 +39,13 @@ def main(argv):
 
     data = Table.read(opt.filename, format='ascii.no_header')
     mask = np.bitwise_and(data['col1'] > 5700, data['col1'] < 6500)
-    spectrum = spec.Spectrum(data['col1'][mask], data['col2'][mask], data['col2'][mask] / 25.)
+    x = data['col1'][mask]
+    y = data['col2'][mask]
+
+    x = (x-np.mean(x))/(np.max(x)-np.mean(x))
+    y = (y-np.mean(y))/(np.max(y)-np.mean(y))
+
+    spectrum = spec.Spectrum(x, y, err=np.zeros_like(y)+np.max(y)/25.)
 
     p = np.polyfit(spectrum.x, spectrum.flux, opt.order)
 
@@ -54,7 +60,7 @@ def main(argv):
     init = np.zeros_like(p)
 
     for i in range(len(p)):
-        vals = np.array([p[i] + 0.5 * p[i], p[i] - 0.5 * p[i]])
+        vals = np.array([p[i] + 0.9 * p[i], p[i] - 0.9 * p[i]])
         print np.min(vals), np.max(vals), p[i] * 1.1, p[i]
         minmax['%i_min' % i] = np.min(vals)
         minmax['%i_max' % i] = np.max(vals)
@@ -67,7 +73,7 @@ def main(argv):
     # map_ = pymc.MAP( M )
     #map_.fit()
 
-    M.sample(iter=50000, burn=25000, tune_interval=1000,
+    M.sample(iter=10000, burn=5000, tune_interval=250,
              tune_throughout=False)  #try running for longer if not happy with convergence.
 
     logging.info('Sampler done...')
@@ -88,10 +94,10 @@ def main(argv):
     oarray = np.array([np.mean(i) for i in cont])
     #earray = np.array(	[ np.std(i) for i in cont] )
 
-    py.plot(spectrum.flux)
-    py.plot(np.polyval(p, spectrum.x))
-    py.plot(np.polyval(init, spectrum.x))
-    py.plot(oarray)
+    py.plot(spectrum.flux,color='0.5')
+    py.plot(np.polyval(p, spectrum.x),color='k')
+    py.plot(np.polyval(init, spectrum.x),color='b')
+    py.plot(oarray,color='r')
     pymc.Matplot.plot(M)
 
     py.show()

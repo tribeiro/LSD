@@ -7,6 +7,7 @@ Provides a model factory for fitting continuum.
 import numpy as np
 import pymc
 
+#def lineFactory(spectrum,linelist,profile):
 
 def continumFactory(spectrum, polyorder, polyrange):
     par = [pymc.Uniform('par_%02i' % i,
@@ -24,9 +25,9 @@ def continumFactory(spectrum, polyorder, polyrange):
         return np.polyval(par, spectrum.x)
 
     sig = pymc.Uniform('sig',
-                       np.median(spectrum.flux) / 100.,
-                       np.median(spectrum.flux) / 10.,
-                       value=np.median(spectrum.flux) / 25.)
+                       np.median(spectrum.err) / 100.,
+                       np.median(spectrum.err) * 2.,
+                       value=np.median(spectrum.err) )
 
     y = pymc.Normal('y', mu=continum,
                     tau=1. / sig ** 2.,
